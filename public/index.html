@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roaster2Website - Website Roaster & Landing Page Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>🔥 Roaster<span class="highlight">2</span>Website</h1>
+      <p class="tagline">Get your website roasted, then get a better one.</p>
+    </header>
+
+    <!-- Step 1: Initial Choice -->
+    <section id="step-1" class="step active">
+      <h2>Let's see what we're working with...</h2>
+      <div class="choice-buttons">
+        <button id="btn-has-website" class="choice-btn">
+          <span class="emoji">🌐</span>
+          <span class="btn-text">I have a website</span>
+          <span class="btn-subtext">Let's roast it</span>
+        </button>
+        <button id="btn-no-website" class="choice-btn">
+          <span class="emoji">🚀</span>
+          <span class="btn-text">I don't have a website</span>
+          <span class="btn-subtext">Let's build one</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 2: URL Input -->
+    <section id="step-2" class="step">
+      <h2>Drop your URL and prepare for impact 💥</h2>
+      <div class="url-input-container">
+        <input type="text" id="url-input" placeholder="https://yourwebsite.com" autocomplete="off">
+        <button id="btn-analyze" class="primary-btn">
+          <span class="btn-content">Roast It 🔥</span>
+          <span class="loading-spinner"></span>
+        </button>
+      </div>
+      <button id="btn-back-1" class="back-btn">← Back</button>
+    </section>
+
+    <!-- Step 3: Results -->
+    <section id="step-3" class="step">
+      <div class="results-header">
+        <h2>The Verdict Is In</h2>
+        <div class="toggle-container">
+          <button id="btn-roast-mode" class="toggle-btn active">🔥 Roast Mode</button>
+          <button id="btn-pro-mode" class="toggle-btn">👔 Professional</button>
+        </div>
+      </div>
+      
+      <div id="results-content" class="results-box">
+        <!-- Results will be injected here -->
+      </div>
+      
+      <div class="results-actions">
+        <button id="btn-build-landing" class="primary-btn">Build Me a Better Website →</button>
+        <button id="btn-try-another" class="secondary-btn">Try Another URL</button>
+      </div>
+    </section>
+
+    <!-- Step 4: Landing Page Generator -->
+    <section id="step-4" class="step">
+      <h2>Let's build your landing page ✨</h2>
+      <p class="step-description">Answer a few quick questions and we'll generate a professional landing page for you.</p>
+      
+      <form id="landing-form">
+        <div class="form-group">
+          <label for="business-name">What's your business name?</label>
+          <input type="text" id="business-name" placeholder="Acme Solutions" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="business-description">What do you do? (One sentence)</label>
+          <input type="text" id="business-description" placeholder="We help small businesses grow with digital marketing" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="target-customer">Who's your ideal customer?</label>
+          <input type="text" id="target-customer" placeholder="Small business owners looking to increase their online presence">
+        </div>
+        
+        <div class="form-group">
+          <label for="features">Top 3 features or benefits (comma separated)</label>
+          <input type="text" id="features" placeholder="Fast results, Affordable pricing, Expert support">
+        </div>
+        
+        <div class="form-group">
+          <label for="cta">Call to action (what should visitors do?)</label>
+          <select id="cta">
+            <option value="Get Started">Get Started</option>
+            <option value="Book a Call">Book a Call</option>
+            <option value="Contact Us">Contact Us</option>
+            <option value="Sign Up Free">Sign Up Free</option>
+            <option value="Get a Quote">Get a Quote</option>
+            <option value="Learn More">Learn More</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="contact-info">Contact info (email, phone, or both)</label>
+          <input type="text" id="contact-info" placeholder="hello@acme.com | (555) 123-4567">
+        </div>
+        
+        <button type="submit" class="primary-btn">
+          <span class="btn-content">Generate My Landing Page 🚀</span>
+          <span class="loading-spinner"></span>
+        </button>
+      </form>
+      
+      <button id="btn-back-3" class="back-btn">← Back</button>
+    </section>
+
+    <!-- Step 5: Generated Landing Page -->
+    <section id="step-5" class="step">
+      <h2>Your landing page is ready! 🎉</h2>
+      
+      <div class="preview-container">
+        <div class="preview-header">
+          <span class="preview-dots">
+            <span></span><span></span><span></span>
+          </span>
+          <span class="preview-title">Preview</span>
+        </div>
+        <iframe id="preview-frame" sandbox="allow-same-origin"></iframe>
+      </div>
+      
+      <div class="download-actions">
+        <button id="btn-download" class="primary-btn">📥 Download HTML</button>
+        <button id="btn-copy-code" class="secondary-btn">📋 Copy Code</button>
+        <button id="btn-start-over" class="secondary-btn">🔄 Start Over</button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>Built with <a href="https://openclaw.ai" target="_blank">OpenClaw</a> ⚡</p>
+    </footer>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
