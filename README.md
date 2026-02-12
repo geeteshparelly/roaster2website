@@ -1,14 +1,14 @@
-# 🔥 Roaster2Website
+# 🔥 Roast2Site
 
-**Get your website roasted, then get a better one.**
+**Get your website roasted, then build a better one.**
 
 A web app that analyzes/roasts websites and generates professional landing pages. Built with OpenClaw.
 
 ## Features
 
 - **Website Roaster**: Enter any URL and get brutally honest (or professional) feedback
-- **Toggle Feedback**: Switch between 🔥 Roast Mode and 👔 Professional analysis
-- **Landing Page Generator**: Answer 5 questions, get a complete HTML landing page
+- **Toggle Feedback**: Switch between 🔥 Roast Mode and 📊 Professional analysis
+- **Landing Page Generator**: Answer a few questions, get a complete HTML landing page
 - **Download Ready**: Export your generated landing page as an HTML file
 
 ## Quick Start
@@ -18,7 +18,7 @@ A web app that analyzes/roasts websites and generates professional landing pages
    ```bash
    npm install
    ```
-3. Copy `.env.example` to `.env` and add your Anthropic API key:
+3. Copy `.env.example` to `.env` and add your Gemini API key:
    ```bash
    cp .env.example .env
    ```
@@ -28,15 +28,15 @@ A web app that analyzes/roasts websites and generates professional landing pages
    ```
 5. Open http://localhost:3000
 
-## Demo Mode
+## API Key
 
-Works without an API key in demo mode (mock responses). Add your Anthropic API key for real AI-powered analysis.
+Get a free Gemini API key at [aistudio.google.com](https://aistudio.google.com)
 
 ## Tech Stack
 
 - **Frontend**: Vanilla HTML/CSS/JS
 - **Backend**: Node.js + Express
-- **AI**: Claude (Anthropic API)
+- **AI**: Google Gemini (free tier)
 - **Web Scraping**: Axios + Cheerio
 
 ## User Flow

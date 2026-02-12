@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,15 +11,40 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Initialize Anthropic client
-const anthropic = process.env.ANTHROPIC_API_KEY 
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null;
+// Gemini API endpoint
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+// Call Gemini API
+async function callGemini(prompt) {
+  if (!GEMINI_API_KEY) {
+    return null;
+  }
+  
+  try {
+    const response = await axios.post(GEMINI_URL, {
+      contents: [{
+        parts: [{ text: prompt }]
+      }],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 2000,
+      }
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000
+    });
+    
+    return response.data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error('Gemini API error:', error.response?.data || error.message);
+    return null;
+  }
+}
 
 // Fetch and analyze website
 async function fetchWebsite(url) {
   try {
-    // Ensure URL has protocol
     if (!url.startsWith('http')) {
       url = 'https://' + url;
     }
@@ -34,7 +58,6 @@ async function fetchWebsite(url) {
     
     const $ = cheerio.load(response.data);
     
-    // Extract key elements for analysis
     const analysis = {
       url: url,
       title: $('title').text() || 'No title found',
@@ -46,18 +69,12 @@ async function fetchWebsite(url) {
       hasHttps: url.startsWith('https'),
       linkCount: $('a').length,
       hasViewport: $('meta[name="viewport"]').length > 0,
-      bodyText: $('body').text().replace(/\s+/g, ' ').trim().substring(0, 2000),
+      bodyText: $('body').text().replace(/\s+/g, ' ').trim().substring(0, 1500),
       hasFavicon: $('link[rel*="icon"]').length > 0,
       scriptCount: $('script').length,
       cssCount: $('link[rel="stylesheet"]').length + $('style').length,
       formCount: $('form').length,
       buttonCount: $('button').length + $('input[type="submit"]').length,
-      socialLinks: {
-        facebook: $('a[href*="facebook.com"]').length > 0,
-        twitter: $('a[href*="twitter.com"], a[href*="x.com"]').length > 0,
-        instagram: $('a[href*="instagram.com"]').length > 0,
-        linkedin: $('a[href*="linkedin.com"]').length > 0
-      }
     };
     
     return { success: true, analysis };
@@ -66,96 +83,139 @@ async function fetchWebsite(url) {
   }
 }
 
-// Generate roast using Claude
+// Generate roast using Gemini
 async function generateRoast(analysis, style = 'roast') {
-  if (!anthropic) {
-    // Return mock response if no API key
-    return getMockResponse(analysis, style);
-  }
-  
   const prompt = style === 'roast' 
-    ? `You are a brutally honest, sarcastic website critic with a great sense of humor. Analyze this website and ROAST it. Be funny, savage, but also helpful. Use emojis. Give it a grade (F to A+).
+    ? `You are a brutally honest, sarcastic website critic with a great sense of humor. Analyze this website and ROAST it. Be funny, savage, but also helpful. Use emojis sparingly.
 
-Website Analysis:
-${JSON.stringify(analysis, null, 2)}
+Website Analysis Data:
+- URL: ${analysis.url}
+- Title: ${analysis.title}
+- Meta Description: ${analysis.metaDescription}
+- H1 Tags: ${analysis.h1Count} (First H1: "${analysis.h1Text}")
+- Images: ${analysis.imageCount} total, ${analysis.imagesWithoutAlt} missing alt text
+- HTTPS: ${analysis.hasHttps ? 'Yes' : 'No'}
+- Mobile Viewport: ${analysis.hasViewport ? 'Yes' : 'No'}
+- Favicon: ${analysis.hasFavicon ? 'Yes' : 'No'}
+- Forms: ${analysis.formCount}
+- Buttons/CTAs: ${analysis.buttonCount}
+- Scripts: ${analysis.scriptCount}
 
-Format your response as:
-1. Overall Grade: [grade]
-2. First Impressions (roast the title/description)
-3. Design Crimes (what looks bad)
-4. Technical Sins (missing SEO, accessibility issues)
-5. Content Critique (is the copy good?)
-6. The Verdict (summary roast)
-7. Redemption Path (3 quick fixes they NEED to make)
+Give a score from 0-100 based on the technical factors above.
 
-Be savage but constructive. Make them laugh, then make them fix their site.`
+Format your response EXACTLY like this:
+## 🔥 Score: [number]/100 | Grade: [letter]
+
+### First Impressions
+[Roast the title and first impression - be savage but funny]
+
+### Technical Roast
+[Roast the technical issues - HTTPS, viewport, images, etc.]
+
+### What Actually Works
+[Briefly mention 1-2 things that aren't terrible]
+
+### The Verdict
+[A funny one-liner summary]
+
+### Quick Fixes (Do These NOW)
+1. [Most important fix]
+2. [Second fix]
+3. [Third fix]`
     : `You are a professional website consultant. Analyze this website and provide constructive, actionable feedback. Be encouraging but honest.
 
-Website Analysis:
-${JSON.stringify(analysis, null, 2)}
+Website Analysis Data:
+- URL: ${analysis.url}
+- Title: ${analysis.title}
+- Meta Description: ${analysis.metaDescription}
+- H1 Tags: ${analysis.h1Count} (First H1: "${analysis.h1Text}")
+- Images: ${analysis.imageCount} total, ${analysis.imagesWithoutAlt} missing alt text
+- HTTPS: ${analysis.hasHttps ? 'Yes' : 'No'}
+- Mobile Viewport: ${analysis.hasViewport ? 'Yes' : 'No'}
+- Favicon: ${analysis.hasFavicon ? 'Yes' : 'No'}
+- Forms: ${analysis.formCount}
+- Buttons/CTAs: ${analysis.buttonCount}
 
-Format your response as:
-1. Overall Grade: [grade]
-2. First Impressions
-3. Design Assessment
-4. Technical Review (SEO, accessibility, performance)
-5. Content Evaluation
-6. Summary
-7. Top 3 Priority Improvements
+Give a score from 0-100 based on the technical factors above.
 
-Be professional, helpful, and specific with recommendations.`;
+Format your response EXACTLY like this:
+## 📊 Score: [number]/100 | Grade: [letter]
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1500,
-    messages: [{ role: 'user', content: prompt }]
-  });
+### Overview
+[Professional assessment of the website]
+
+### Technical Assessment
+[Review HTTPS, mobile, SEO basics - be specific]
+
+### Strengths
+[What the site does well]
+
+### Priority Improvements
+1. [Most important improvement with explanation]
+2. [Second improvement]
+3. [Third improvement]
+
+### Summary
+[Professional one-paragraph summary]`;
+
+  const result = await callGemini(prompt);
   
-  return message.content[0].text;
-}
-
-// Generate landing page using Claude
-async function generateLandingPage(businessInfo) {
-  if (!anthropic) {
-    return getMockLandingPage(businessInfo);
+  if (result) {
+    return result;
   }
   
-  const prompt = `Create a complete, beautiful, modern HTML landing page for this business. Include inline CSS (no external files). Make it responsive and professional.
-
-Business Info:
-- Name: ${businessInfo.name}
-- Description: ${businessInfo.description}
-- Target Customer: ${businessInfo.targetCustomer}
-- Key Features/Benefits: ${businessInfo.features}
-- Call to Action: ${businessInfo.cta}
-- Contact: ${businessInfo.contact}
-
-Requirements:
-1. Modern, clean design with a professional color scheme
-2. Hero section with headline and CTA button
-3. Features/benefits section
-4. About section
-5. Contact section with the provided info
-6. Footer
-7. Fully responsive (mobile-friendly)
-8. Use modern CSS (flexbox/grid)
-9. Include subtle animations/hover effects
-10. Make the CTA button stand out
-
-Return ONLY the complete HTML code, no explanation. Start with <!DOCTYPE html>`;
-
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 4000,
-    messages: [{ role: 'user', content: prompt }]
-  });
-  
-  return message.content[0].text;
+  // Fallback to mock if API fails
+  return getMockResponse(analysis, style);
 }
 
-// Mock responses for testing without API key
+// Generate landing page using Gemini
+async function generateLandingPage(businessInfo) {
+  const prompt = `Create a complete, modern, professional HTML landing page. Include ALL CSS inline in a <style> tag. Do NOT use any external files or CDNs.
+
+Business Details:
+- Name: ${businessInfo.name}
+- What they do: ${businessInfo.description}
+- Target customer: ${businessInfo.targetCustomer || 'General audience'}
+- Key benefits: ${businessInfo.features || 'Quality service'}
+- Call to action: ${businessInfo.cta || 'Get Started'}
+- Contact: ${businessInfo.contact || 'Contact us'}
+
+Requirements:
+1. Modern, clean design with a cohesive color scheme
+2. Fully responsive (works on mobile)
+3. Hero section with headline, subheadline, and CTA button
+4. Features/benefits section with 3 items
+5. About section
+6. Contact section
+7. Footer
+8. Smooth hover effects on buttons
+9. Professional typography
+10. Make the CTA button prominent and eye-catching
+
+Return ONLY the complete HTML code starting with <!DOCTYPE html>. No explanations, no markdown code blocks, just the raw HTML.`;
+
+  const result = await callGemini(prompt);
+  
+  if (result) {
+    // Clean up the response - remove markdown code blocks if present
+    let html = result.trim();
+    if (html.startsWith('```html')) {
+      html = html.slice(7);
+    }
+    if (html.startsWith('```')) {
+      html = html.slice(3);
+    }
+    if (html.endsWith('```')) {
+      html = html.slice(0, -3);
+    }
+    return html.trim();
+  }
+  
+  return getMockLandingPage(businessInfo);
+}
+
+// Mock responses as fallback
 function getMockResponse(analysis, style) {
-  // Calculate a mock score based on analysis
   let score = 50;
   if (analysis.hasHttps) score += 15;
   if (analysis.hasViewport) score += 10;
@@ -171,61 +231,45 @@ function getMockResponse(analysis, style) {
     return `## 🔥 Score: ${score}/100 | Grade: ${grade}
 
 ### First Impressions
-"${analysis.title}" - ${score < 70 ? "Oh honey, did you let your cat walk across the keyboard when naming this? I've seen better titles on spam emails." : "Okay, at least the title doesn't make me want to close the tab immediately. Low bar, but you cleared it."}
+"${analysis.title}" - ${score < 70 ? "Yikes. Did an intern name this during a coffee break?" : "Okay, the title doesn't make me want to close the tab. Low bar, but cleared."}
 
-### Design Crimes 👮
-- ${analysis.imageCount} images found ${analysis.imagesWithoutAlt > 0 ? `and ${analysis.imagesWithoutAlt} are playing hide and seek with alt text. Screen readers hate this one weird trick!` : "- all with alt text. Someone actually cares about accessibility!"}
-- ${analysis.h1Count === 0 ? "NO H1 TAG?! Google is crying somewhere. How will anyone know what this page is about?" : `${analysis.h1Count} H1 tag(s). ${analysis.h1Count > 1 ? "Multiple H1s? Pick a lane!" : "At least you got that right."}`}
+### Technical Roast
+- HTTPS: ${analysis.hasHttps ? "✅ At least you're not completely living in 2005" : "🚨 NO HTTPS?! Chrome is literally warning people about you"}
+- Mobile: ${analysis.hasViewport ? "✅ Won't look like a postage stamp on phones" : "❌ No viewport = mobile users are squinting"}
+- Images: ${analysis.imagesWithoutAlt > 0 ? `${analysis.imagesWithoutAlt} images playing hide and seek with alt text` : "Alt texts present, someone cares about accessibility"}
 
-### Technical Sins 💀
-- ${analysis.hasHttps ? "HTTPS: ✅ Congrats on doing the bare minimum in ${new Date().getFullYear()}" : "🚨 NO HTTPS?! It's not 2005 anymore! Chrome is literally screaming 'NOT SECURE' at your visitors."}
-- ${analysis.hasViewport ? "Mobile viewport: ✅ Your site won't look like a postage stamp on phones" : "No viewport meta tag = your mobile users are pinching and zooming like it's 2008"}
-- ${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "No meta description. Google literally has no idea what you do. You're a mystery wrapped in an enigma wrapped in bad SEO." : "Meta description exists. Shocking. Someone did their homework."}
+### What Actually Works
+${analysis.hasHttps ? "You have HTTPS, so you're not completely hopeless." : "The site... loads? That's something."}
 
-### The Verdict 🎤
-${score < 60 ? "This website is like a participation trophy - it exists, and that's about all we can say for it." : score < 80 ? "Not terrible, not great. You're the C student of websites - present but not memorable." : "Okay fine, this is actually decent. I'm almost impressed. Almost."}
+### The Verdict
+${score < 60 ? "This website needs CPR." : score < 80 ? "Mediocre. The beige of websites." : "Surprisingly not terrible."}
 
-### Redemption Path 🛤️
-1. ${analysis.imagesWithoutAlt > 0 ? "Add alt text to your images (accessibility AND SEO, two birds one stone)" : "Optimize those images - they're probably chonky"}
-2. ${!analysis.hasHttps ? "GET HTTPS IMMEDIATELY - it's free with Let's Encrypt, no excuses" : "Check your page speed - nobody waits for slow sites"}
-3. ${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "Write a meta description that doesn't make people fall asleep" : "Review your content hierarchy and internal linking"}
-
-*[DEMO MODE - Connect API key for full AI-powered roasts]*`;
+### Quick Fixes (Do These NOW)
+1. ${!analysis.hasHttps ? "Get HTTPS immediately - it's free with Let's Encrypt" : analysis.imagesWithoutAlt > 0 ? "Add alt text to images" : "Optimize page speed"}
+2. ${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "Add a meta description for SEO" : "Review heading hierarchy"}
+3. ${!analysis.hasViewport ? "Add viewport meta tag for mobile" : "Add more clear CTAs"}`;
   } else {
     return `## 📊 Score: ${score}/100 | Grade: ${grade}
 
-### Executive Summary
-The website "${analysis.title}" ${score >= 70 ? "demonstrates solid fundamentals with room for optimization" : "has a functional foundation that requires strategic improvements to compete effectively"}.
+### Overview
+"${analysis.title}" presents a ${score >= 70 ? "solid foundation" : "functional but improvable"} website that ${score >= 70 ? "follows many best practices" : "needs attention in several key areas"}.
 
 ### Technical Assessment
+- **Security**: ${analysis.hasHttps ? "✅ HTTPS enabled" : "⚠️ Missing HTTPS - critical issue"}
+- **Mobile**: ${analysis.hasViewport ? "✅ Viewport configured" : "⚠️ No viewport meta - poor mobile experience"}
+- **SEO**: ${analysis.metaDescription !== 'No meta description' ? "✅ Meta description present" : "⚠️ Missing meta description"}
+- **Accessibility**: ${analysis.imagesWithoutAlt === 0 ? "✅ Images have alt text" : `⚠️ ${analysis.imagesWithoutAlt} images need alt text`}
 
-**Security & Performance**
-- SSL Certificate: ${analysis.hasHttps ? "✅ Active (HTTPS enabled)" : "⚠️ Missing - Critical security issue"}
-- Mobile Optimization: ${analysis.hasViewport ? "✅ Viewport configured" : "⚠️ Viewport meta tag missing"}
-- Favicon: ${analysis.hasFavicon ? "✅ Present" : "⚠️ Missing - Affects brand recognition"}
+### Strengths
+${analysis.hasHttps ? "SSL certificate properly configured. " : ""}${analysis.hasViewport ? "Mobile-responsive setup. " : ""}${analysis.h1Count === 1 ? "Proper heading structure." : ""}
 
-**SEO Foundations**
-- Meta Description: ${analysis.metaDescription && analysis.metaDescription !== 'No meta description' ? "✅ Present" : "⚠️ Missing - Impacts search visibility"}
-- Heading Structure: ${analysis.h1Count} H1 tag(s) ${analysis.h1Count === 1 ? "✅" : analysis.h1Count === 0 ? "⚠️ Missing" : "⚠️ Multiple - should be single"}
-- Image Optimization: ${analysis.imageCount} images, ${analysis.imagesWithoutAlt} without alt text
+### Priority Improvements
+1. ${!analysis.hasHttps ? "**Implement SSL** - Essential for security and SEO" : "**Optimize performance** - Review load times"}
+2. ${analysis.imagesWithoutAlt > 0 ? "**Add alt text** - Improves accessibility and SEO" : "**Enhance meta tags** - Better search visibility"}
+3. ${!analysis.hasViewport ? "**Add viewport meta** - Critical for mobile users" : "**Review CTAs** - Ensure clear user actions"}
 
-**Content & UX**
-- Forms: ${analysis.formCount} form element(s)
-- Call-to-Actions: ${analysis.buttonCount} button(s)
-- External Links: ${Object.values(analysis.socialLinks).filter(Boolean).length}/4 social platforms linked
-
-### Priority Recommendations
-
-1. **${!analysis.hasHttps ? "Implement SSL Certificate" : analysis.imagesWithoutAlt > 0 ? "Add Alt Text to Images" : "Optimize Page Performance"}**
-   ${!analysis.hasHttps ? "Critical for security, SEO, and user trust. Use Let's Encrypt for free SSL." : analysis.imagesWithoutAlt > 0 ? "Improves accessibility and SEO. Describe each image's content and purpose." : "Compress images and minimize render-blocking resources."}
-
-2. **${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "Add Meta Description" : "Enhance Content Strategy"}**
-   ${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "Write a compelling 150-160 character description for search results." : "Review content hierarchy and ensure clear value proposition above the fold."}
-
-3. **${!analysis.hasViewport ? "Add Viewport Meta Tag" : "Improve User Engagement"}**
-   ${!analysis.hasViewport ? "Essential for mobile responsiveness. Add: <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" : "Consider adding more clear calls-to-action and reducing friction in user journeys."}
-
-*[DEMO MODE - Connect API key for comprehensive AI analysis]*`;
+### Summary
+This website scores ${score}/100. ${score >= 70 ? "It has a solid foundation with room for optimization." : "Focus on the priority improvements above to significantly enhance user experience and search visibility."}`;
   }
 }
 
@@ -238,20 +282,21 @@ function getMockLandingPage(info) {
   <title>${info.name}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-    .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 100px 20px; text-align: center; }
-    .hero h1 { font-size: 3rem; margin-bottom: 20px; }
-    .hero p { font-size: 1.3rem; margin-bottom: 30px; opacity: 0.9; }
-    .btn { display: inline-block; background: #fff; color: #667eea; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-weight: bold; transition: transform 0.3s, box-shadow 0.3s; }
-    .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .features { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
-    .features h2 { text-align: center; margin-bottom: 50px; font-size: 2.5rem; }
-    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-    .feature-card { background: #f8f9fa; padding: 30px; border-radius: 10px; text-align: center; }
-    .feature-card h3 { color: #667eea; margin-bottom: 15px; }
-    .contact { background: #f8f9fa; padding: 80px 20px; text-align: center; }
-    .contact h2 { margin-bottom: 30px; }
-    footer { background: #333; color: white; padding: 30px; text-align: center; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+    .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 80px 20px; text-align: center; }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 16px; }
+    .hero p { font-size: 1.2rem; margin-bottom: 24px; opacity: 0.9; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .btn { display: inline-block; background: white; color: #667eea; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: transform 0.2s, box-shadow 0.2s; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    .features { padding: 60px 20px; max-width: 1000px; margin: 0 auto; }
+    .features h2 { text-align: center; margin-bottom: 40px; font-size: 2rem; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .feature { background: #f8f9fa; padding: 24px; border-radius: 12px; text-align: center; }
+    .feature h3 { color: #667eea; margin-bottom: 12px; }
+    .contact { background: #f8f9fa; padding: 60px 20px; text-align: center; }
+    .contact h2 { margin-bottom: 16px; }
+    .contact p { color: #666; }
+    footer { background: #333; color: white; padding: 24px; text-align: center; }
   </style>
 </head>
 <body>
@@ -263,27 +308,16 @@ function getMockLandingPage(info) {
   <section class="features">
     <h2>Why Choose Us</h2>
     <div class="feature-grid">
-      <div class="feature-card">
-        <h3>Quality Service</h3>
-        <p>${info.features}</p>
-      </div>
-      <div class="feature-card">
-        <h3>Our Customers</h3>
-        <p>We serve ${info.targetCustomer}</p>
-      </div>
-      <div class="feature-card">
-        <h3>Get Started</h3>
-        <p>Ready to work with us? Reach out today!</p>
-      </div>
+      <div class="feature"><h3>Quality</h3><p>${info.features || 'We deliver excellence'}</p></div>
+      <div class="feature"><h3>Our Customers</h3><p>We serve ${info.targetCustomer || 'businesses like yours'}</p></div>
+      <div class="feature"><h3>Results</h3><p>Get started today and see the difference</p></div>
     </div>
   </section>
   <section class="contact" id="contact">
-    <h2>Contact Us</h2>
+    <h2>Get In Touch</h2>
     <p>${info.contact}</p>
   </section>
-  <footer>
-    <p>&copy; 2024 ${info.name}. All rights reserved.</p>
-  </footer>
+  <footer><p>&copy; ${new Date().getFullYear()} ${info.name}</p></footer>
 </body>
 </html>`;
 }
@@ -342,16 +376,15 @@ app.post('/api/generate-landing', async (req, res) => {
   }
 });
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    apiConnected: !!anthropic,
-    mode: anthropic ? 'live' : 'demo'
+    aiConnected: !!GEMINI_API_KEY,
+    mode: GEMINI_API_KEY ? 'live' : 'demo'
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`🔥 Roaster2Website running at http://localhost:${PORT}`);
-  console.log(`📡 API Mode: ${anthropic ? 'LIVE (Claude connected)' : 'DEMO (no API key)'}`);
+  console.log(`🔥 Roast2Site running at http://localhost:${PORT}`);
+  console.log(`📡 AI Mode: ${GEMINI_API_KEY ? 'LIVE (Gemini connected)' : 'DEMO (no API key)'}`);
 });
