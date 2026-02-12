@@ -3,54 +3,141 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roaster2Website - Website Roaster & Landing Page Generator</title>
+  <title>Roaster2Website — AI Website Analysis & Landing Page Generator</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
     <!-- Header -->
     <header>
-      <h1>🔥 Roaster<span class="highlight">2</span>Website</h1>
-      <p class="tagline">Get your website roasted, then get a better one.</p>
+      <div class="badge">⚡ AI-Powered Website Intelligence</div>
+      <h1>Roast Your Website,<br><span class="highlight">Build a Better One</span></h1>
+      <p class="tagline">Get brutally honest feedback on your website, then generate a professional landing page in seconds.</p>
+      
+      <div class="trust-badges">
+        <div class="trust-badge">
+          <span class="badge-icon">🔥</span>
+          <span>Roast + Pro Mode</span>
+        </div>
+        <div class="trust-badge">
+          <span class="badge-icon">🤖</span>
+          <span>Powered by Claude AI</span>
+        </div>
+        <div class="trust-badge">
+          <span class="badge-icon">⚡</span>
+          <span>Instant Landing Pages</span>
+        </div>
+      </div>
     </header>
 
     <!-- Step 1: Initial Choice -->
     <section id="step-1" class="step active">
-      <h2>Let's see what we're working with...</h2>
-      <div class="choice-buttons">
-        <button id="btn-has-website" class="choice-btn">
-          <span class="emoji">🌐</span>
-          <span class="btn-text">I have a website</span>
-          <span class="btn-subtext">Let's roast it</span>
-        </button>
-        <button id="btn-no-website" class="choice-btn">
-          <span class="emoji">🚀</span>
-          <span class="btn-text">I don't have a website</span>
-          <span class="btn-subtext">Let's build one</span>
-        </button>
+      <div class="choice-section">
+        <div class="analyze-box">
+          <div class="free-badge">✨ Free Analysis</div>
+          <h3>Analyze Your Website</h3>
+          <p>Enter your URL and get a detailed score with actionable feedback</p>
+          <div class="url-input-container">
+            <div class="url-input-wrapper">
+              <span class="url-icon">🌐</span>
+              <input type="text" id="url-input" placeholder="yourwebsite.com" autocomplete="off">
+            </div>
+            <button id="btn-analyze" class="primary-btn">
+              <span class="btn-content">Analyze →</span>
+              <span class="loading-spinner"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="choice-divider">
+          <span>or</span>
+        </div>
+
+        <div class="choice-cards">
+          <button id="btn-no-website" class="choice-card">
+            <span class="card-icon">🚀</span>
+            <h4>I Don't Have a Website</h4>
+            <p>Skip straight to building your landing page</p>
+            <span class="card-link">Build Landing Page →</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Benchmark Brands -->
+      <div class="benchmark-section">
+        <p class="benchmark-label">TOP SCORING BRANDS</p>
+        <p class="benchmark-sublabel">See how industry leaders score on our analysis</p>
+        <div class="benchmark-scroll">
+          <div class="benchmark-track">
+            <div class="brand-card">
+              <div class="brand-header">
+                <span class="brand-name">Apple</span>
+                <span class="brand-score">94</span>
+              </div>
+              <span class="brand-trait">Minimalist</span>
+              <p class="brand-desc">Design-first innovation</p>
+            </div>
+            <div class="brand-card">
+              <div class="brand-header">
+                <span class="brand-name">Nike</span>
+                <span class="brand-score">92</span>
+              </div>
+              <span class="brand-trait">Empowerment</span>
+              <p class="brand-desc">Just do it mentality</p>
+            </div>
+            <div class="brand-card">
+              <div class="brand-header">
+                <span class="brand-name">Airbnb</span>
+                <span class="brand-score">89</span>
+              </div>
+              <span class="brand-trait">Belonging</span>
+              <p class="brand-desc">Home everywhere</p>
+            </div>
+            <div class="brand-card">
+              <div class="brand-header">
+                <span class="brand-name">Tesla</span>
+                <span class="brand-score">91</span>
+              </div>
+              <span class="brand-trait">Visionary</span>
+              <p class="brand-desc">Future-forward energy</p>
+            </div>
+            <div class="brand-card">
+              <div class="brand-header">
+                <span class="brand-name">Stripe</span>
+                <span class="brand-score">93</span>
+              </div>
+              <span class="brand-trait">Developer-First</span>
+              <p class="brand-desc">Payments infrastructure</p>
+            </div>
+            <div class="brand-card">
+              <div class="brand-header">
+                <span class="brand-name">Notion</span>
+                <span class="brand-score">87</span>
+              </div>
+              <span class="brand-trait">Flexible</span>
+              <p class="brand-desc">All-in-one workspace</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Step 2: URL Input -->
+    <!-- Step 2: Results -->
     <section id="step-2" class="step">
-      <h2>Drop your URL and prepare for impact 💥</h2>
-      <div class="url-input-container">
-        <input type="text" id="url-input" placeholder="https://yourwebsite.com" autocomplete="off">
-        <button id="btn-analyze" class="primary-btn">
-          <span class="btn-content">Roast It 🔥</span>
-          <span class="loading-spinner"></span>
-        </button>
-      </div>
-      <button id="btn-back-1" class="back-btn">← Back</button>
-    </section>
-
-    <!-- Step 3: Results -->
-    <section id="step-3" class="step">
       <div class="results-header">
-        <h2>The Verdict Is In</h2>
+        <div class="score-section">
+          <div class="score-circle" id="score-circle">
+            <span class="score-number" id="score-number">--</span>
+            <span class="score-label">Score</span>
+          </div>
+          <div class="score-meta">
+            <h2 id="analyzed-url">yourwebsite.com</h2>
+            <p class="grade-text">Grade: <span id="grade-letter" class="grade">-</span></p>
+          </div>
+        </div>
         <div class="toggle-container">
-          <button id="btn-roast-mode" class="toggle-btn active">🔥 Roast Mode</button>
+          <button id="btn-roast-mode" class="toggle-btn active">🔥 Roast</button>
           <button id="btn-pro-mode" class="toggle-btn">👔 Professional</button>
         </div>
       </div>
@@ -60,24 +147,27 @@
       </div>
       
       <div class="results-actions">
-        <button id="btn-build-landing" class="primary-btn">Build Me a Better Website →</button>
-        <button id="btn-try-another" class="secondary-btn">Try Another URL</button>
+        <button id="btn-build-landing" class="primary-btn gold">✨ Build Me a Better Website</button>
+        <button id="btn-try-another" class="secondary-btn">← Analyze Another</button>
       </div>
     </section>
 
-    <!-- Step 4: Landing Page Generator -->
-    <section id="step-4" class="step">
-      <h2>Let's build your landing page ✨</h2>
-      <p class="step-description">Answer a few quick questions and we'll generate a professional landing page for you.</p>
+    <!-- Step 3: Landing Page Generator -->
+    <section id="step-3" class="step">
+      <div class="form-header">
+        <div class="badge">✨ Landing Page Generator</div>
+        <h2>Let's Build Your Page</h2>
+        <p>Answer a few questions and we'll generate a professional landing page you can download instantly.</p>
+      </div>
       
       <form id="landing-form">
         <div class="form-group">
-          <label for="business-name">What's your business name?</label>
+          <label for="business-name">Business Name</label>
           <input type="text" id="business-name" placeholder="Acme Solutions" required>
         </div>
         
         <div class="form-group">
-          <label for="business-description">What do you do? (One sentence)</label>
+          <label for="business-description">What do you do? <span class="hint">(One sentence)</span></label>
           <input type="text" id="business-description" placeholder="We help small businesses grow with digital marketing" required>
         </div>
         
@@ -87,12 +177,12 @@
         </div>
         
         <div class="form-group">
-          <label for="features">Top 3 features or benefits (comma separated)</label>
+          <label for="features">Top 3 benefits <span class="hint">(comma separated)</span></label>
           <input type="text" id="features" placeholder="Fast results, Affordable pricing, Expert support">
         </div>
         
         <div class="form-group">
-          <label for="cta">Call to action (what should visitors do?)</label>
+          <label for="cta">Call to Action</label>
           <select id="cta">
             <option value="Get Started">Get Started</option>
             <option value="Book a Call">Book a Call</option>
@@ -104,29 +194,33 @@
         </div>
         
         <div class="form-group">
-          <label for="contact-info">Contact info (email, phone, or both)</label>
+          <label for="contact-info">Contact Info</label>
           <input type="text" id="contact-info" placeholder="hello@acme.com | (555) 123-4567">
         </div>
         
-        <button type="submit" class="primary-btn">
-          <span class="btn-content">Generate My Landing Page 🚀</span>
+        <button type="submit" class="primary-btn full-width">
+          <span class="btn-content">Generate Landing Page 🚀</span>
           <span class="loading-spinner"></span>
         </button>
       </form>
       
-      <button id="btn-back-3" class="back-btn">← Back</button>
+      <button id="btn-back-form" class="back-btn">← Back</button>
     </section>
 
-    <!-- Step 5: Generated Landing Page -->
-    <section id="step-5" class="step">
-      <h2>Your landing page is ready! 🎉</h2>
+    <!-- Step 4: Generated Landing Page -->
+    <section id="step-4" class="step">
+      <div class="form-header">
+        <div class="badge success">✅ Success!</div>
+        <h2>Your Landing Page is Ready</h2>
+        <p>Preview below, then download or copy the code.</p>
+      </div>
       
       <div class="preview-container">
         <div class="preview-header">
           <span class="preview-dots">
             <span></span><span></span><span></span>
           </span>
-          <span class="preview-title">Preview</span>
+          <span class="preview-url" id="preview-url">landing-page.html</span>
         </div>
         <iframe id="preview-frame" sandbox="allow-same-origin"></iframe>
       </div>

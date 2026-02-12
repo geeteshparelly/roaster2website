@@ -1,5 +1,4 @@
 // State
-let currentStep = 1;
 let analysisResults = null;
 let generatedHTML = null;
 let currentFeedbackMode = 'roast';
@@ -9,15 +8,13 @@ const steps = {
   1: document.getElementById('step-1'),
   2: document.getElementById('step-2'),
   3: document.getElementById('step-3'),
-  4: document.getElementById('step-4'),
-  5: document.getElementById('step-5')
+  4: document.getElementById('step-4')
 };
 
 // Navigation
 function showStep(stepNum) {
   Object.values(steps).forEach(step => step.classList.remove('active'));
   steps[stepNum].classList.add('active');
-  currentStep = stepNum;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -41,6 +38,70 @@ function formatFeedback(text) {
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/\n\n/g, '<br><br>')
     .replace(/\n/g, '<br>');
+}
+
+// Extract score from feedback
+function extractScore(feedback) {
+  // Look for patterns like "Score: 65" or "65/100" or "Grade: C"
+  const scoreMatch = feedback.match(/(?:score|rating)[:\s]*(\d{1,3})/i) ||
+                     feedback.match(/(\d{1,3})\/100/) ||
+                     feedback.match(/Overall[:\s]*(\d{1,3})/i);
+  
+  if (scoreMatch) {
+    return Math.min(100, Math.max(0, parseInt(scoreMatch[1])));
+  }
+  
+  // Try to extract from grade
+  const gradeMatch = feedback.match(/Grade[:\s]*([A-F][+-]?)/i);
+  if (gradeMatch) {
+    const gradeScores = {
+      'A+': 97, 'A': 94, 'A-': 90,
+      'B+': 87, 'B': 84, 'B-': 80,
+      'C+': 77, 'C': 74, 'C-': 70,
+      'D+': 67, 'D': 64, 'D-': 60,
+      'F': 50
+    };
+    return gradeScores[gradeMatch[1].toUpperCase()] || 70;
+  }
+  
+  return 65; // Default score
+}
+
+// Get grade from score
+function getGrade(score) {
+  if (score >= 93) return 'A';
+  if (score >= 90) return 'A-';
+  if (score >= 87) return 'B+';
+  if (score >= 83) return 'B';
+  if (score >= 80) return 'B-';
+  if (score >= 77) return 'C+';
+  if (score >= 73) return 'C';
+  if (score >= 70) return 'C-';
+  if (score >= 67) return 'D+';
+  if (score >= 63) return 'D';
+  if (score >= 60) return 'D-';
+  return 'F';
+}
+
+// Animate score
+function animateScore(targetScore) {
+  const scoreNumber = document.getElementById('score-number');
+  const gradeSpan = document.getElementById('grade-letter');
+  let current = 0;
+  const duration = 1000;
+  const steps = 30;
+  const increment = targetScore / steps;
+  const stepTime = duration / steps;
+  
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= targetScore) {
+      current = targetScore;
+      clearInterval(timer);
+    }
+    scoreNumber.textContent = Math.round(current);
+    gradeSpan.textContent = getGrade(Math.round(current));
+  }, stepTime);
 }
 
 // API calls
@@ -76,25 +137,21 @@ async function generateLandingPage(businessInfo) {
 
 // Event Listeners
 
-// Step 1: Choice buttons
-document.getElementById('btn-has-website').addEventListener('click', () => {
-  showStep(2);
-});
-
-document.getElementById('btn-no-website').addEventListener('click', () => {
-  showStep(4);
-});
-
-// Step 2: URL analysis
+// Step 1: Analyze button
 document.getElementById('btn-analyze').addEventListener('click', async () => {
   const urlInput = document.getElementById('url-input');
   const btn = document.getElementById('btn-analyze');
-  const url = urlInput.value.trim();
+  let url = urlInput.value.trim();
   
   if (!url) {
     showToast('Please enter a URL');
     urlInput.focus();
     return;
+  }
+  
+  // Clean up URL
+  if (!url.startsWith('http')) {
+    url = 'https://' + url;
   }
   
   btn.disabled = true;
@@ -103,13 +160,20 @@ document.getElementById('btn-analyze').addEventListener('click', async () => {
   try {
     analysisResults = await analyzeWebsite(url);
     
+    // Update URL display
+    document.getElementById('analyzed-url').textContent = url.replace(/^https?:\/\//, '');
+    
     // Show roast by default
     document.getElementById('results-content').innerHTML = formatFeedback(analysisResults.roastFeedback);
     currentFeedbackMode = 'roast';
     document.getElementById('btn-roast-mode').classList.add('active');
     document.getElementById('btn-pro-mode').classList.remove('active');
     
-    showStep(3);
+    // Animate score
+    const score = extractScore(analysisResults.professionalFeedback);
+    showStep(2);
+    setTimeout(() => animateScore(score), 300);
+    
   } catch (error) {
     showToast(error.message || 'Failed to analyze website');
   } finally {
@@ -125,11 +189,12 @@ document.getElementById('url-input').addEventListener('keypress', (e) => {
   }
 });
 
-document.getElementById('btn-back-1').addEventListener('click', () => {
-  showStep(1);
+// No website button
+document.getElementById('btn-no-website').addEventListener('click', () => {
+  showStep(3);
 });
 
-// Step 3: Results toggle
+// Step 2: Results toggle
 document.getElementById('btn-roast-mode').addEventListener('click', () => {
   if (currentFeedbackMode !== 'roast' && analysisResults) {
     document.getElementById('results-content').innerHTML = formatFeedback(analysisResults.roastFeedback);
@@ -149,15 +214,15 @@ document.getElementById('btn-pro-mode').addEventListener('click', () => {
 });
 
 document.getElementById('btn-build-landing').addEventListener('click', () => {
-  showStep(4);
+  showStep(3);
 });
 
 document.getElementById('btn-try-another').addEventListener('click', () => {
   document.getElementById('url-input').value = '';
-  showStep(2);
+  showStep(1);
 });
 
-// Step 4: Landing page form
+// Step 3: Landing page form
 document.getElementById('landing-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   
@@ -178,11 +243,15 @@ document.getElementById('landing-form').addEventListener('submit', async (e) => 
     const result = await generateLandingPage(businessInfo);
     generatedHTML = result.html;
     
+    // Update preview URL
+    const fileName = businessInfo.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.html';
+    document.getElementById('preview-url').textContent = fileName;
+    
     // Show preview
     const frame = document.getElementById('preview-frame');
     frame.srcdoc = generatedHTML;
     
-    showStep(5);
+    showStep(4);
   } catch (error) {
     showToast(error.message || 'Failed to generate landing page');
   } finally {
@@ -191,23 +260,26 @@ document.getElementById('landing-form').addEventListener('submit', async (e) => 
   }
 });
 
-document.getElementById('btn-back-3').addEventListener('click', () => {
+document.getElementById('btn-back-form').addEventListener('click', () => {
   if (analysisResults) {
-    showStep(3);
+    showStep(2);
   } else {
     showStep(1);
   }
 });
 
-// Step 5: Download and copy
+// Step 4: Download and copy
 document.getElementById('btn-download').addEventListener('click', () => {
   if (!generatedHTML) return;
+  
+  const businessName = document.getElementById('business-name').value || 'landing-page';
+  const fileName = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.html';
   
   const blob = new Blob([generatedHTML], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'landing-page.html';
+  a.download = fileName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -233,6 +305,8 @@ document.getElementById('btn-start-over').addEventListener('click', () => {
   generatedHTML = null;
   document.getElementById('url-input').value = '';
   document.getElementById('landing-form').reset();
+  document.getElementById('score-number').textContent = '--';
+  document.getElementById('grade-letter').textContent = '-';
   showStep(1);
 });
 
@@ -241,9 +315,11 @@ fetch('/api/health')
   .then(r => r.json())
   .then(data => {
     if (data.mode === 'demo') {
-      console.log('Running in demo mode - connect API key for full functionality');
+      console.log('🔶 Running in demo mode - connect API key for full AI analysis');
+    } else {
+      console.log('🟢 Connected to Claude AI');
     }
   })
   .catch(() => {
-    console.log('API not available');
+    console.log('⚠️ API not available');
   });

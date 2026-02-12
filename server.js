@@ -155,55 +155,77 @@ Return ONLY the complete HTML code, no explanation. Start with <!DOCTYPE html>`;
 
 // Mock responses for testing without API key
 function getMockResponse(analysis, style) {
+  // Calculate a mock score based on analysis
+  let score = 50;
+  if (analysis.hasHttps) score += 15;
+  if (analysis.hasViewport) score += 10;
+  if (analysis.metaDescription && analysis.metaDescription !== 'No meta description') score += 10;
+  if (analysis.h1Count > 0) score += 5;
+  if (analysis.imagesWithoutAlt === 0 && analysis.imageCount > 0) score += 5;
+  if (analysis.hasFavicon) score += 5;
+  score = Math.min(100, Math.max(0, score));
+  
+  const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+  
   if (style === 'roast') {
-    return `## 🔥 Overall Grade: C-
+    return `## 🔥 Score: ${score}/100 | Grade: ${grade}
 
 ### First Impressions
-"${analysis.title}" - Oh honey, did you let your cat walk across the keyboard when naming this? I've seen better titles on spam emails.
+"${analysis.title}" - ${score < 70 ? "Oh honey, did you let your cat walk across the keyboard when naming this? I've seen better titles on spam emails." : "Okay, at least the title doesn't make me want to close the tab immediately. Low bar, but you cleared it."}
 
 ### Design Crimes 👮
-- ${analysis.imageCount} images and ${analysis.imagesWithoutAlt} are playing hide and seek with alt text
-- ${analysis.h1Count === 0 ? "NO H1 TAG?! Google is crying somewhere." : "At least you have an H1. Gold star for the bare minimum."}
+- ${analysis.imageCount} images found ${analysis.imagesWithoutAlt > 0 ? `and ${analysis.imagesWithoutAlt} are playing hide and seek with alt text. Screen readers hate this one weird trick!` : "- all with alt text. Someone actually cares about accessibility!"}
+- ${analysis.h1Count === 0 ? "NO H1 TAG?! Google is crying somewhere. How will anyone know what this page is about?" : `${analysis.h1Count} H1 tag(s). ${analysis.h1Count > 1 ? "Multiple H1s? Pick a lane!" : "At least you got that right."}`}
 
 ### Technical Sins 💀
-- ${analysis.hasHttps ? "HTTPS: ✅ (congrats on doing the bare minimum in 2024)" : "NO HTTPS?! It's not 2005 anymore!"}
-- ${analysis.hasViewport ? "Mobile viewport: ✅" : "No viewport meta tag = your mobile users hate you"}
-- ${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "No meta description. Google has no idea what you do." : "Meta description exists. Shocking."}
+- ${analysis.hasHttps ? "HTTPS: ✅ Congrats on doing the bare minimum in ${new Date().getFullYear()}" : "🚨 NO HTTPS?! It's not 2005 anymore! Chrome is literally screaming 'NOT SECURE' at your visitors."}
+- ${analysis.hasViewport ? "Mobile viewport: ✅ Your site won't look like a postage stamp on phones" : "No viewport meta tag = your mobile users are pinching and zooming like it's 2008"}
+- ${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "No meta description. Google literally has no idea what you do. You're a mystery wrapped in an enigma wrapped in bad SEO." : "Meta description exists. Shocking. Someone did their homework."}
 
 ### The Verdict 🎤
-This website is like a participation trophy - it exists, and that's about all we can say for it.
+${score < 60 ? "This website is like a participation trophy - it exists, and that's about all we can say for it." : score < 80 ? "Not terrible, not great. You're the C student of websites - present but not memorable." : "Okay fine, this is actually decent. I'm almost impressed. Almost."}
 
 ### Redemption Path 🛤️
-1. ${analysis.imagesWithoutAlt > 0 ? "Add alt text to your images (accessibility AND SEO)" : "Keep those alt texts"}
-2. ${!analysis.hasHttps ? "GET HTTPS IMMEDIATELY" : "Optimize those images"}
-3. Write a meta description that doesn't make people fall asleep
+1. ${analysis.imagesWithoutAlt > 0 ? "Add alt text to your images (accessibility AND SEO, two birds one stone)" : "Optimize those images - they're probably chonky"}
+2. ${!analysis.hasHttps ? "GET HTTPS IMMEDIATELY - it's free with Let's Encrypt, no excuses" : "Check your page speed - nobody waits for slow sites"}
+3. ${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "Write a meta description that doesn't make people fall asleep" : "Review your content hierarchy and internal linking"}
 
-*[DEMO MODE - Connect API key for real AI analysis]*`;
+*[DEMO MODE - Connect API key for full AI-powered roasts]*`;
   } else {
-    return `## 📊 Overall Grade: C
+    return `## 📊 Score: ${score}/100 | Grade: ${grade}
 
-### First Impressions
-The website "${analysis.title}" presents a functional foundation that could benefit from strategic improvements.
+### Executive Summary
+The website "${analysis.title}" ${score >= 70 ? "demonstrates solid fundamentals with room for optimization" : "has a functional foundation that requires strategic improvements to compete effectively"}.
 
-### Design Assessment
-- Images: ${analysis.imageCount} total (${analysis.imagesWithoutAlt} missing alt text)
-- Heading structure: ${analysis.h1Count} H1 tag(s)
-- Forms: ${analysis.formCount} | Buttons: ${analysis.buttonCount}
+### Technical Assessment
 
-### Technical Review
-- SSL Security: ${analysis.hasHttps ? "✅ Enabled" : "⚠️ Not detected"}
-- Mobile Responsiveness: ${analysis.hasViewport ? "✅ Viewport configured" : "⚠️ Viewport meta missing"}
-- SEO Basics: ${analysis.metaDescription !== 'No meta description' ? "✅ Meta description present" : "⚠️ Meta description missing"}
+**Security & Performance**
+- SSL Certificate: ${analysis.hasHttps ? "✅ Active (HTTPS enabled)" : "⚠️ Missing - Critical security issue"}
+- Mobile Optimization: ${analysis.hasViewport ? "✅ Viewport configured" : "⚠️ Viewport meta tag missing"}
+- Favicon: ${analysis.hasFavicon ? "✅ Present" : "⚠️ Missing - Affects brand recognition"}
 
-### Summary
-Your website has a solid foundation but needs attention in several key areas to improve user experience and search visibility.
+**SEO Foundations**
+- Meta Description: ${analysis.metaDescription && analysis.metaDescription !== 'No meta description' ? "✅ Present" : "⚠️ Missing - Impacts search visibility"}
+- Heading Structure: ${analysis.h1Count} H1 tag(s) ${analysis.h1Count === 1 ? "✅" : analysis.h1Count === 0 ? "⚠️ Missing" : "⚠️ Multiple - should be single"}
+- Image Optimization: ${analysis.imageCount} images, ${analysis.imagesWithoutAlt} without alt text
 
-### Top 3 Priority Improvements
-1. ${analysis.imagesWithoutAlt > 0 ? "Add descriptive alt text to all images" : "Optimize image file sizes"}
-2. ${!analysis.hasHttps ? "Implement SSL certificate (HTTPS)" : "Review page load performance"}
-3. ${analysis.metaDescription === 'No meta description' ? "Add compelling meta descriptions" : "Enhance heading hierarchy"}
+**Content & UX**
+- Forms: ${analysis.formCount} form element(s)
+- Call-to-Actions: ${analysis.buttonCount} button(s)
+- External Links: ${Object.values(analysis.socialLinks).filter(Boolean).length}/4 social platforms linked
 
-*[DEMO MODE - Connect API key for real AI analysis]*`;
+### Priority Recommendations
+
+1. **${!analysis.hasHttps ? "Implement SSL Certificate" : analysis.imagesWithoutAlt > 0 ? "Add Alt Text to Images" : "Optimize Page Performance"}**
+   ${!analysis.hasHttps ? "Critical for security, SEO, and user trust. Use Let's Encrypt for free SSL." : analysis.imagesWithoutAlt > 0 ? "Improves accessibility and SEO. Describe each image's content and purpose." : "Compress images and minimize render-blocking resources."}
+
+2. **${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "Add Meta Description" : "Enhance Content Strategy"}**
+   ${!analysis.metaDescription || analysis.metaDescription === 'No meta description' ? "Write a compelling 150-160 character description for search results." : "Review content hierarchy and ensure clear value proposition above the fold."}
+
+3. **${!analysis.hasViewport ? "Add Viewport Meta Tag" : "Improve User Engagement"}**
+   ${!analysis.hasViewport ? "Essential for mobile responsiveness. Add: <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" : "Consider adding more clear calls-to-action and reducing friction in user journeys."}
+
+*[DEMO MODE - Connect API key for comprehensive AI analysis]*`;
   }
 }
 
