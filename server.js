@@ -13,7 +13,7 @@ app.use(express.static('public'));
 
 // Gemini API endpoint
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
 
 // Call Gemini API
 async function callGemini(prompt) {
@@ -170,6 +170,7 @@ Format your response EXACTLY like this:
 
 // Generate landing page using Gemini
 async function generateLandingPage(businessInfo) {
+  console.log('Generating landing page for:', businessInfo.name);
   const prompt = `Create a complete, modern, professional HTML landing page. Include ALL CSS inline in a <style> tag. Do NOT use any external files or CDNs.
 
 Business Details:
@@ -197,6 +198,7 @@ Return ONLY the complete HTML code starting with <!DOCTYPE html>. No explanation
   const result = await callGemini(prompt);
   
   if (result) {
+    console.log('Gemini returned HTML, length:', result.length);
     // Clean up the response - remove markdown code blocks if present
     let html = result.trim();
     if (html.startsWith('```html')) {
@@ -211,7 +213,10 @@ Return ONLY the complete HTML code starting with <!DOCTYPE html>. No explanation
     return html.trim();
   }
   
-  return getMockLandingPage(businessInfo);
+  console.log('Using mock landing page for:', businessInfo.name);
+  const mockHtml = getMockLandingPage(businessInfo);
+  console.log('Mock HTML starts with:', mockHtml.substring(0, 100));
+  return mockHtml;
 }
 
 // Mock responses as fallback
@@ -274,50 +279,152 @@ This website scores ${score}/100. ${score >= 70 ? "It has a solid foundation wit
 }
 
 function getMockLandingPage(info) {
+  // Parse features into array
+  const featureList = (info.features || 'Quality service, Fast delivery, Great support').split(',').map(f => f.trim());
+  
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${info.name}</title>
+  <title>${info.name} - ${info.description}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-    .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 80px 20px; text-align: center; }
-    .hero h1 { font-size: 2.5rem; margin-bottom: 16px; }
-    .hero p { font-size: 1.2rem; margin-bottom: 24px; opacity: 0.9; max-width: 600px; margin-left: auto; margin-right: auto; }
-    .btn { display: inline-block; background: white; color: #667eea; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: transform 0.2s, box-shadow 0.2s; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-    .features { padding: 60px 20px; max-width: 1000px; margin: 0 auto; }
-    .features h2 { text-align: center; margin-bottom: 40px; font-size: 2rem; }
-    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
-    .feature { background: #f8f9fa; padding: 24px; border-radius: 12px; text-align: center; }
-    .feature h3 { color: #667eea; margin-bottom: 12px; }
-    .contact { background: #f8f9fa; padding: 60px 20px; text-align: center; }
-    .contact h2 { margin-bottom: 16px; }
-    .contact p { color: #666; }
-    footer { background: #333; color: white; padding: 24px; text-align: center; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #1a1a2e; background: #fff; }
+    
+    /* Navigation */
+    nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; border-bottom: 1px solid #eee; }
+    .logo { font-weight: 800; font-size: 1.4rem; color: #6366f1; }
+    .nav-btn { background: #6366f1; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
+    .nav-btn:hover { background: #4f46e5; transform: translateY(-1px); }
+    
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%); color: white; padding: 140px 24px 100px; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%); animation: pulse 15s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    .hero-content { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
+    .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; margin-bottom: 24px; backdrop-filter: blur(10px); }
+    .hero h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 20px; line-height: 1.1; }
+    .hero p { font-size: 1.25rem; margin-bottom: 32px; opacity: 0.95; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .cta-btn { display: inline-block; background: white; color: #6366f1; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+    
+    /* Features */
+    .features { padding: 100px 24px; max-width: 1100px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-header h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 16px; color: #1a1a2e; }
+    .section-header p { color: #64748b; font-size: 1.1rem; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; }
+    .feature-card { background: #f8fafc; padding: 36px; border-radius: 20px; text-align: center; transition: all 0.3s; border: 1px solid #e2e8f0; }
+    .feature-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .feature-icon { width: 64px; height: 64px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 20px; }
+    .feature-card h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 12px; color: #1a1a2e; }
+    .feature-card p { color: #64748b; line-height: 1.7; }
+    
+    /* Social Proof */
+    .social-proof { background: #f8fafc; padding: 80px 24px; text-align: center; }
+    .social-proof h2 { font-size: 2rem; font-weight: 700; margin-bottom: 40px; }
+    .stats { display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat-number { font-size: 3rem; font-weight: 800; color: #6366f1; }
+    .stat-label { color: #64748b; font-size: 0.95rem; }
+    
+    /* CTA Section */
+    .cta-section { background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); padding: 100px 24px; text-align: center; color: white; }
+    .cta-section h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 16px; }
+    .cta-section p { opacity: 0.8; margin-bottom: 32px; font-size: 1.1rem; }
+    .cta-section .cta-btn { background: #6366f1; color: white; }
+    .cta-section .cta-btn:hover { background: #4f46e5; }
+    
+    /* Contact */
+    .contact { padding: 80px 24px; text-align: center; }
+    .contact h2 { font-size: 2rem; font-weight: 700; margin-bottom: 24px; }
+    .contact-info { font-size: 1.2rem; color: #6366f1; font-weight: 600; }
+    
+    /* Footer */
+    footer { background: #1a1a2e; color: white; padding: 40px 24px; text-align: center; }
+    footer p { opacity: 0.7; }
+    
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.2rem; }
+      .hero { padding: 120px 20px 80px; }
+      .stats { gap: 40px; }
+      .stat-number { font-size: 2.2rem; }
+    }
   </style>
 </head>
 <body>
+  <nav>
+    <div class="logo">${info.name}</div>
+    <a href="#contact" class="nav-btn">${info.cta}</a>
+  </nav>
+  
   <section class="hero">
-    <h1>${info.name}</h1>
-    <p>${info.description}</p>
-    <a href="#contact" class="btn">${info.cta}</a>
-  </section>
-  <section class="features">
-    <h2>Why Choose Us</h2>
-    <div class="feature-grid">
-      <div class="feature"><h3>Quality</h3><p>${info.features || 'We deliver excellence'}</p></div>
-      <div class="feature"><h3>Our Customers</h3><p>We serve ${info.targetCustomer || 'businesses like yours'}</p></div>
-      <div class="feature"><h3>Results</h3><p>Get started today and see the difference</p></div>
+    <div class="hero-content">
+      <div class="badge">✨ Welcome to ${info.name}</div>
+      <h1>${info.description}</h1>
+      <p>We help ${info.targetCustomer || 'people like you'} achieve their goals with our exceptional service and dedication to quality.</p>
+      <a href="#contact" class="cta-btn">${info.cta} →</a>
     </div>
   </section>
+  
+  <section class="features">
+    <div class="section-header">
+      <h2>Why Choose ${info.name}?</h2>
+      <p>Here's what makes us different</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⭐</div>
+        <h3>${featureList[0] || 'Quality Service'}</h3>
+        <p>We're committed to delivering the highest quality in everything we do. Your satisfaction is our priority.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🚀</div>
+        <h3>${featureList[1] || 'Fast & Reliable'}</h3>
+        <p>Quick turnaround times without compromising on quality. We value your time as much as you do.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💎</div>
+        <h3>${featureList[2] || 'Premium Experience'}</h3>
+        <p>From start to finish, enjoy a seamless experience that exceeds your expectations.</p>
+      </div>
+    </div>
+  </section>
+  
+  <section class="social-proof">
+    <h2>Trusted by Many</h2>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Happy Customers</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">98%</div>
+        <div class="stat-label">Satisfaction Rate</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">Support Available</div>
+      </div>
+    </div>
+  </section>
+  
+  <section class="cta-section">
+    <h2>Ready to Get Started?</h2>
+    <p>Join hundreds of satisfied customers today</p>
+    <a href="#contact" class="cta-btn">${info.cta} →</a>
+  </section>
+  
   <section class="contact" id="contact">
     <h2>Get In Touch</h2>
-    <p>${info.contact}</p>
+    <p class="contact-info">${info.contact}</p>
   </section>
-  <footer><p>&copy; ${new Date().getFullYear()} ${info.name}</p></footer>
+  
+  <footer>
+    <p>&copy; ${new Date().getFullYear()} ${info.name}. All rights reserved.</p>
+  </footer>
 </body>
 </html>`;
 }
