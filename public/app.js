@@ -226,7 +226,7 @@ document.getElementById('btn-try-another').addEventListener('click', () => {
 document.getElementById('landing-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const btn = e.target.querySelector('.primary-btn');
+  const btn = e.target.querySelector('.btn-primary');
   btn.disabled = true;
   btn.classList.add('loading');
   
